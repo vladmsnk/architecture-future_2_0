@@ -1,0 +1,34 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Data Flow Diagram для системы «Будущее 2.0»
+
+System_Boundary(data_system, "Система «Будущее 2.0»") {
+  Person(user, "Бизнес‑пользователь", "Создаёт отчёты через портал")
+
+  Container(client_portal, "Портал самообслуживания", "React, Node.js", "Конструктор отчётов для бизнес‑пользователей")
+  Container(api_gateway, "API Gateway", "Go", "Маршрутизация запросов и авторизация")
+  Container(iam_service, "IAM Service", "Go", "Хранение и проверка прав пользователей")
+
+  Container(fintech_service, "Финансовые сервисы", "Go, Java", "Обработка транзакций и финансовых отчётов")
+  Container(healthcare_service, "Медицинский сервис", "Python, Java", "Обработка медицинских данных и интеграция с ИИ")
+  Container(ai_service, "ИИ‑сервис", "Python", "Обработка и прогнозирование на основе медицинских данных")
+
+  ContainerDb(dwh, "Data Warehouse", "PostgreSQL", "Агрегированные данные для аналитики")
+  Container(storage, "Хранилище отчётов", "S3", "Сохранение результатов отчётов")
+}
+
+Rel(user, client_portal, "HTTPS: Использует портал для создания отчётов")
+Rel(client_portal, api_gateway, "REST JSON: Запросы отчётов")
+Rel(api_gateway, fintech_service, "REST: Получение финансовых данных")
+Rel(api_gateway, healthcare_service, "REST: Получение медицинских данных")
+Rel(api_gateway, ai_service, "REST: Интеграция с ИИ для анализа данных")
+Rel(api_gateway, iam_service, "REST: Проверка прав доступа пользователя")
+Rel(api_gateway, dwh, "SQL: Запросы к данным для отчётов")
+Rel(api_gateway, storage, "REST: Получение результатов отчётов из хранилища")
+Rel(fintech_service, dwh, "SQL: Запись финансовых данных")
+Rel(healthcare_service, dwh, "SQL: Запись медицинских данных")
+Rel(ai_service, healthcare_service, "REST: Передача данных и прогнозов для анализа")
+Rel(client_portal, storage, "S3: Доступ к результатам отчётов")
+
+@enduml
