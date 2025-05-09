@@ -1,0 +1,45 @@
+@startuml DataPortal_C4_Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title «Портал самообслуживания» — Диаграмма контейнеров
+
+Person(user, "Бизнес‑пользователь", "Создаёт и просматривает отчёты через портал")
+
+System_Boundary(data_portal_system, "Портал самообслуживания") {
+  Container(client_portal, "Портал самообслуживания", "React, Node.js", "Единый web‑интерфейс для создания, просмотра и управления отчётами с поддержкой шаблонов и расписаний")
+
+  Container(api_gateway, "API Gateway", "Go", "Маршрутизует REST‑запросы, обрабатывает OIDC аутентификацию и авторизацию, а также маршрутизирует вызовы к микросервисам и очередям")
+
+  Container(idp, "Identity Provider (Keycloak / Hydra)", "Go", "Обеспечивает SSO по OpenID Connect и выдаёт JWT‑токены с ролями и правами")
+
+  Container(iam_service, "IAM Service", "Go", "Хранит роли и RBAC‑политики и проверяет права пользователя по JWT‑токену через API")
+
+  Container(report_generation_service, "Сервис генерации отчётов", "Go", "Принимает JSON‑описание отчёта, формирует SQL‑запрос и выполняет асинхронную обработку через очередь")
+
+  Container(task_queue, "Очередь задач (Kafka)", "Kafka", "Управляет задачами по генерации отчётов в асинхронном режиме")
+
+  Container(storage, "Object Storage (S3)", "Amazon S3", "Сохраняет результаты отчётов и выдаёт presigned URLs для доступа к файлам")
+
+  ContainerDb(dwh, "Data Warehouse", "PostgreSQL", "Хранит агрегированные аналитические данные для аналитики и отчётности")
+}
+
+System_Ext(external_systems, "Внешние сервисы", "REST/SQL", "Интеграция с финтех и ИИ‑сервисами для обогащения аналитики")
+System_Ext(email_service, "Email сервис", "SMTP", "Отправляет сгенерированные отчёты по расписанию")
+
+Rel(user, client_portal, "HTTPS: Использует портал для работы с отчётами")
+Rel(client_portal, api_gateway, "REST JSON: Запросы метаданных и создание отчётов")
+Rel(api_gateway, idp, "OIDC: Аутентификация и обновление токенов")
+Rel(api_gateway, iam_service, "REST: Проверка ролей и прав доступа")
+Rel(api_gateway, report_generation_service, "REST: Отправка задания на генерацию отчёта")
+Rel(api_gateway, storage, "REST: Получение presigned URL для результатов")
+Rel(api_gateway, dwh, "SQL: Выполнение аналитических запросов для отчётов")
+Rel(api_gateway, external_systems, "REST: Доступ к данным финтех и ИИ‑сервисов")
+Rel(api_gateway, email_service, "REST: Планирование и отправка отчётов по расписанию")
+
+Rel(report_generation_service, task_queue, "Kafka: Помещает задачу в очередь")
+Rel(report_generation_service, dwh, "SQL: Выполняет аналитический запрос")
+Rel(report_generation_service, storage, "S3: Сохраняет результаты отчёта")
+
+Rel(task_queue, report_generation_service, "Kafka: Триггер обработки задач")
+
+@enduml
